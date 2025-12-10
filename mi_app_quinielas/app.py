@@ -70,21 +70,30 @@ def reiniciar_mes(loteria):
 # ==========================
 
 def revisar_estado_numero(df_mes, numero):
-    """Devuelve estado, salidas y días restantes según la regla 7 días"""
+    """
+    Devuelve el estado de un número según cantidad de salidas y días restantes.
+    Reglas:
+    - Max 3 veces por mes
+    - Primera salida → Número en ascenso
+    - 2ª → Número Caliente
+    - 3ª → Número Quemado
+    - Bloqueo de 7 días desde última salida
+    """
+    numero = numero.zfill(2)
     df_num = df_mes[df_mes["numero"] == numero]
     total_salidas = len(df_num)
 
     # Determinar estado textual
     if total_salidas == 0:
-        estado = "Número Frío"
+        estado = "Número en ascenso"  # Primera vez → en ascenso
     elif total_salidas == 1:
-        estado = "Número en ascenso"
-    elif total_salidas == 2:
         estado = "Número Caliente"
+    elif total_salidas == 2:
+        estado = "Número Quemado"
     else:
         estado = "Número Quemado"
 
-    # Calcular días restantes (7 días de bloqueo)
+    # Días restantes para poder salir de nuevo
     dias_restantes = 0
     if total_salidas > 0:
         ultima_fecha = pd.to_datetime(df_num["fecha"].max()).date()
@@ -98,7 +107,7 @@ def revisar_estado_numero(df_mes, numero):
     return estado, total_salidas, dias_restantes
 
 # ==========================
-# FUNCIÓN: ARRASTRES
+# FUNCIONES DE ARRASTRES
 # ==========================
 
 def calcular_arrastres(numero):
@@ -132,7 +141,6 @@ if st.button("Registrar número"):
         numero_registro = numero_registro.zfill(2)
         registrar_numero(loteria, numero_registro)
         st.success(f"Número {numero_registro} registrado correctamente.")
-        st.experimental_rerun = lambda: None  # Quitar experimental_rerun
     else:
         st.error("Número inválido.")
 
@@ -150,7 +158,7 @@ if st.button("Revisar estado"):
         estado, salidas, dias_restantes = revisar_estado_numero(df_mes, numero_revisar)
         mensaje = f"**{estado}** — Salidas este mes: **{salidas}**"
         if dias_restantes > 0:
-            mensaje += f" — ({dias_restantes} días restantes)"
+            mensaje += f" — ({dias_restantes} días restantes para poder salir de nuevo)"
         st.info(mensaje)
     else:
         st.error("Número inválido.")
@@ -190,3 +198,5 @@ st.header("🧹 Reiniciar mes (historial anual no se borra)")
 if st.button("Reiniciar mes"):
     reiniciar_mes(loteria)
     st.success("Mes reiniciado correctamente.")
+
+
