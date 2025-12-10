@@ -2,14 +2,14 @@ import streamlit as st
 import streamlit.components.v1 as components
 
 st.set_page_config(page_title="Arrastre Interactivo", layout="centered")
-st.title("🎰 Arrastre Interactivo Sin Flechas")
+st.title("🎰 Arrastre Interactivo Simple")
 
 st.write("Escribe un número base del 00 al 99 y observa sus arrastres animados automáticamente.")
 
-# HTML + CSS + JS
+# HTML + CSS + JS para input estilizado y arrastres
 html_code = """
 <div style="text-align:center; margin-top:30px;">
-    <input id="base" type="text" value="00" maxlength="2" style="
+    <input id="base" type="number" min="0" max="99" value="0" style="
         font-size:3rem;
         font-weight:bold;
         background: linear-gradient(135deg, #6a11cb, #2575fc);
@@ -50,7 +50,7 @@ const arrDiv = document.getElementById("arrastres");
 function updateArrastres(n){
     arrDiv.innerHTML = "";
     [25,50,75].forEach((offset,i)=>{
-        let num = (parseInt(n)||0 + offset)%100;
+        let num = (parseInt(n)+offset)%100;
         let span = document.createElement("div");
         span.className = "arrastre";
         span.style.animationDelay = (i*0.2)+"s";
@@ -62,18 +62,20 @@ function updateArrastres(n){
 // Inicializar arrastres
 updateArrastres(0);
 
-// Validar input y actualizar arrastres al escribir
+// Actualizar arrastres al escribir número
 baseInput.addEventListener("input", ()=>{
-    let val = baseInput.value.replace(/\D/g,''); // solo números
-    if(val === "") val = "0";
-    if(parseInt(val) > 99) val = "99";
-    baseInput.value = val.padStart(2,"0");
+    let val = parseInt(baseInput.value) || 0;
+    if(val < 0) val = 0;
+    if(val > 99) val = 99;
+    baseInput.value = val;
     updateArrastres(val);
 });
 </script>
 """
 
 components.html(html_code, height=400)
+
+
 
 
 
