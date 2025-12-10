@@ -1,19 +1,19 @@
 import streamlit as st
 
-st.set_page_config(page_title="Arrastre Animado", layout="centered")
-st.title("🎯 Arrastre Interactivo con Animaciones")
+st.set_page_config(page_title="Arrastre Animado Interactivo", layout="centered")
+st.title("🎯 Arrastre by Esteban")
 
-st.write("Ingresa un número del 00 al 99 y observa sus arrastres aparecer con animaciones.")
+st.write("Ingresa un número del 00 al 99 y observa sus arrastres aparecer animados junto al número base.")
 
-# Entrada del usuario
+# Número base
 numero_base = st.number_input("Número base (00-99):", min_value=0, max_value=99, step=1)
 
-if st.button("Calcular arrastres"):
+if st.button("Generar arrastres"):
     n = int(numero_base)
     arrastres = [(n + 25) % 100, (n + 50) % 100, (n + 75) % 100]
     arrastres = [str(x).zfill(2) for x in arrastres]
 
-    # Generar HTML con animaciones
+    # HTML con animaciones para número base + arrastres
     html_content = """
     <style>
     .arrastre-container {
@@ -42,14 +42,19 @@ if st.button("Calcular arrastres"):
     <div class="arrastre-container">
     """
 
-    delay = 0
+    # Número base con animación
+    html_content += f'<div class="arrastre" style="animation-delay: 0s">Base: {str(n).zfill(2)}</div>'
+
+    # Arrastres con retraso
+    delay = 0.3
     for num in arrastres:
         html_content += f'<div class="arrastre" style="animation-delay: {delay}s">{num}</div>'
-        delay += 0.2  # retraso entre números
+        delay += 0.2
 
     html_content += "</div>"
 
     st.markdown(html_content, unsafe_allow_html=True)
+
 
 
 
