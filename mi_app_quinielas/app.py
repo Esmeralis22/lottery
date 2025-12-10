@@ -1,15 +1,14 @@
 import streamlit as st
 import streamlit.components.v1 as components
 
-st.set_page_config(page_title="Arrastre Interactivo Editable", layout="centered")
+st.set_page_config(page_title="Arrastre Interactivo", layout="centered")
 st.title("🎰 Arrastre by Esteban")
 
-st.write("Escribe directamente el número base (00-99) y observa sus arrastres animados automáticamente.")
+st.write("Escribe un número base del 00 al 99 y observa sus arrastres animados automáticamente.")
 
 # HTML + CSS + JS para input estilizado y arrastres
 html_code = """
-<div style="text-align:center;">
-    <h3>Número Base</h3>
+<div style="text-align:center; margin-top:30px;">
     <input id="base" type="number" min="0" max="99" value="0" style="
         font-size:3rem;
         font-weight:bold;
@@ -22,8 +21,7 @@ html_code = """
         text-align:center;
     ">
 
-    <h3 style="margin-top:30px;">Arrastres</h3>
-    <div id="arrastres" style="display:flex; justify-content:center; gap:20px; flex-wrap:wrap;"></div>
+    <div id="arrastres" style="display:flex; justify-content:center; gap:20px; flex-wrap:wrap; margin-top:30px;"></div>
 </div>
 
 <style>
@@ -51,9 +49,8 @@ const arrDiv = document.getElementById("arrastres");
 
 function updateArrastres(n){
     arrDiv.innerHTML = "";
-    let offsets = [25,50,75];
-    offsets.forEach((o,i)=>{
-        let num = (parseInt(n) + o) % 100;
+    [25,50,75].forEach((offset,i)=>{
+        let num = (parseInt(n)+offset)%100;
         let span = document.createElement("div");
         span.className = "arrastre";
         span.style.animationDelay = (i*0.2)+"s";
@@ -65,7 +62,7 @@ function updateArrastres(n){
 // Inicializar arrastres
 updateArrastres(0);
 
-// Actualizar arrastres al cambiar el input
+// Actualizar arrastres al escribir número
 baseInput.addEventListener("input", ()=>{
     let val = parseInt(baseInput.value) || 0;
     if(val < 0) val = 0;
@@ -77,6 +74,7 @@ baseInput.addEventListener("input", ()=>{
 """
 
 components.html(html_code, height=400)
+
 
 
 
