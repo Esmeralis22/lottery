@@ -85,11 +85,11 @@ def revisar_estado_numero(df_mes, numero):
 
     # Determinar estado textual
     if total_salidas == 0:
-        estado = "Número en ascenso"  # Primera vez → en ascenso
+        estado = "Número Frío"
     elif total_salidas == 1:
-        estado = "Número Caliente"
+        estado = "Número en ascenso"
     elif total_salidas == 2:
-        estado = "Número Quemado"
+        estado = "Número Caliente"
     else:
         estado = "Número Quemado"
 
@@ -144,7 +144,7 @@ if st.button("Registrar número"):
         registrar_numero(loteria, numero_registro)
         
         # 2️⃣ recargar df_mes actualizado
-        df_mes, _ = cargar_mes_actual(loteria)
+        df_mes, _ = cargar_mes_actual(loteria)  # <- actualización inmediata
 
         # 3️⃣ mostrar mensaje con estado actualizado
         estado, salidas, dias_restantes = revisar_estado_numero(df_mes, numero_registro)
@@ -209,6 +209,7 @@ st.header("🧹 Reiniciar mes (historial anual no se borra)")
 if st.button("Reiniciar mes"):
     reiniciar_mes(loteria)
     st.success("Mes reiniciado correctamente.")
+
 
 
 
