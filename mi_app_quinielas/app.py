@@ -1,16 +1,16 @@
 import streamlit as st
 import streamlit.components.v1 as components
 
-st.set_page_config(page_title="Arrastre Interactivo Live", layout="centered")
-st.title("🎰 Arrastre Slot Machine Interactivo")
+st.set_page_config(page_title="Arrastre Interactivo Editable", layout="centered")
+st.title("🎰 Arrastre by Esteban")
 
-st.write("Usa las flechas arriba/abajo para cambiar el número base y ver sus arrastres animados al instante.")
+st.write("Escribe el número base directamente en el cuadro y observa sus arrastres animados al instante.")
 
 # HTML + CSS + JS para número base editable y arrastres animados
 html_code = """
 <div style="text-align:center;">
     <h3>Número Base</h3>
-    <div id="base" tabindex="0" style="
+    <div id="base" contenteditable="true" style="
         display:inline-block;
         font-size:3rem;
         font-weight:bold;
@@ -18,8 +18,8 @@ html_code = """
         color:white;
         padding:20px 30px;
         border-radius:15px;
-        cursor:pointer;
-        user-select:none;
+        cursor:text;
+        user-select:text;
     ">00</div>
 
     <h3 style="margin-top:30px;">Arrastres</h3>
@@ -65,17 +65,17 @@ function updateArrastres(n){
 // Inicializar arrastres
 updateArrastres(0);
 
-// Manejo de teclas
-baseDiv.addEventListener("keydown", (e)=>{
-    let val = parseInt(baseDiv.innerText);
-    if(e.key === "ArrowUp") val = (val + 1) % 100;
-    if(e.key === "ArrowDown") val = (val - 1 + 100) % 100;
+// Manejo de cambios manuales en el span editable
+baseDiv.addEventListener("input", ()=>{
+    let val = parseInt(baseDiv.innerText) || 0;
+    if(val < 0) val = 0;
+    if(val > 99) val = 99;
     baseDiv.innerText = val.toString().padStart(2,"0");
     updateArrastres(val);
 });
 
-// Manejo de click para seleccionar y poder usar flechas
-baseDiv.addEventListener("click", ()=>{ baseDiv.focus(); });
+// Focus automático al cargar para editar
+baseDiv.focus();
 </script>
 """
 
