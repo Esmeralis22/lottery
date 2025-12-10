@@ -4,23 +4,23 @@ import streamlit.components.v1 as components
 st.set_page_config(page_title="Arrastre Interactivo Editable", layout="centered")
 st.title("🎰 Arrastre by Esteban")
 
-st.write("Escribe el número base directamente en el cuadro y observa sus arrastres animados al instante.")
+st.write("Escribe directamente el número base (00-99) y observa sus arrastres animados automáticamente.")
 
-# HTML + CSS + JS para número base editable y arrastres animados
+# HTML + CSS + JS para input estilizado y arrastres
 html_code = """
 <div style="text-align:center;">
     <h3>Número Base</h3>
-    <div id="base" contenteditable="true" style="
-        display:inline-block;
+    <input id="base" type="number" min="0" max="99" value="0" style="
         font-size:3rem;
         font-weight:bold;
         background: linear-gradient(135deg, #6a11cb, #2575fc);
         color:white;
         padding:20px 30px;
         border-radius:15px;
-        cursor:text;
-        user-select:text;
-    ">00</div>
+        border:none;
+        width:100px;
+        text-align:center;
+    ">
 
     <h3 style="margin-top:30px;">Arrastres</h3>
     <div id="arrastres" style="display:flex; justify-content:center; gap:20px; flex-wrap:wrap;"></div>
@@ -46,7 +46,7 @@ html_code = """
 </style>
 
 <script>
-const baseDiv = document.getElementById("base");
+const baseInput = document.getElementById("base");
 const arrDiv = document.getElementById("arrastres");
 
 function updateArrastres(n){
@@ -65,21 +65,19 @@ function updateArrastres(n){
 // Inicializar arrastres
 updateArrastres(0);
 
-// Manejo de cambios manuales en el span editable
-baseDiv.addEventListener("input", ()=>{
-    let val = parseInt(baseDiv.innerText) || 0;
+// Actualizar arrastres al cambiar el input
+baseInput.addEventListener("input", ()=>{
+    let val = parseInt(baseInput.value) || 0;
     if(val < 0) val = 0;
     if(val > 99) val = 99;
-    baseDiv.innerText = val.toString().padStart(2,"0");
+    baseInput.value = val;
     updateArrastres(val);
 });
-
-// Focus automático al cargar para editar
-baseDiv.focus();
 </script>
 """
 
 components.html(html_code, height=400)
+
 
 
 
