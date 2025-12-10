@@ -1,217 +1,205 @@
 import streamlit as st
 import pandas as pd
 import os
-from datetime import datetime
+import datetime
 
-# ============================
-# CONFIGURACIÓN INICIAL
-# ============================
+# ==========================
+# CONFIGURACIÓN GENERAL
+# ==========================
 
 st.set_page_config(page_title="Control de Quinielas", layout="centered")
 
+# Carpeta donde se guardará todo
+BASE_DIR = "bases_quinielas_streamlit"
+os.makedirs(BASE_DIR, exist_ok=True)
+
+# Lista final de loterías
 LOTERIAS = [
     "Primera Día", "Primera Noche",
     "La Suerte Día", "La Suerte Noche",
     "Gana Más", "Lotería Nacional",
     "Loteka", "Leidsa",
-    "Lotería Real",
-    "Florida Día", "Florida Noche",
-    "New York Tarde", "New York Noche",
-    "Anguilla 10:00 AM", "Anguilla 1:00 PM",
-    "Anguilla 6:00 PM", "Anguilla 9:00 PM"
+    "Loteria Real", "Florida Día",
+    "Florida Noche", "New York Tarde",
+    "New York Noche", "Anguilla 10:00 AM",
+    "Anguilla 1:00 PM", "Anguilla 6:00 PM",
+    "Anguilla 9:00 PM"
 ]
 
-BASE_DIR = "bases_quinielas_streamlit"
-os.makedirs(BASE_DIR, exist_ok=True)
-
-HISTORIAL_GLOBAL = os.path.join(BASE_DIR, "historial_quinielas.xlsx")
-
-
-# ============================
-# FUNCIONES AUXILIARES
-# ============================
+# ==========================
+# FUNCIÓN: Archivo mensual
+# ==========================
 
 def cargar_mes_actual(loteria):
-    """Carga el archivo del mes correspondiente."""
-    ahora = datetime.now()
-    archivo = os.path.join(
-        BASE_DIR,
-        f"{loteria}_{ahora.year}_{ahora.month:02d}.xlsx"
-    )
+    hoy = datetime.date.today()
+    nombre_archivo = f"{loteria}_{hoy.year}_{hoy.month}.xlsx"
+    ruta = os.path.join(BASE_DIR, nombre_archivo)
 
-    if os.path.exists(archivo):
-        return pd.read_excel(archivo), archivo
+    if os.path.exists(ruta):
+        df = pd.read_excel(ruta)
     else:
         df = pd.DataFrame(columns=["fecha", "numero"])
-        df.to_excel(archivo, index=False)
-        return df, archivo
+        df.to_excel(ruta, index=False)
 
+    return df, ruta
 
-def guardar_mes_actual(df, archivo):
-    df.to_excel(archivo, index=False)
+# ==========================
+# FUNCIÓN: Guardar registro
+# ==========================
 
+def registrar_numero(loteria, numero):
+    df_mes, ruta_mes = cargar_mes_actual(loteria)
+    hoy = datetime.date.today()
 
-def registrar_historial_global(loteria, numero):
-    """Guarda de forma permanente TODA la historia del año."""
-    fecha = datetime.now().strftime("%Y-%m-%d %H:%M")
+    # Añadir registro al mes actual
+    df_mes.loc[len(df_mes)] = [hoy, numero]
+    df_mes.to_excel(ruta_mes, index=False)
 
-    if os.path.exists(HISTORIAL_GLOBAL):
-        df = pd.read_excel(HISTORIAL_GLOBAL)
+    # Guardar también en historial general
+    ruta_historial = os.path.join(BASE_DIR, "historial_quinielas.xlsx")
+    if os.path.exists(ruta_historial):
+        df_hist = pd.read_excel(ruta_historial)
     else:
-        df = pd.DataFrame(columns=["fecha", "loteria", "numero"])
+        df_hist = pd.DataFrame(columns=["loteria", "fecha", "numero"])
 
-    df.loc[len(df)] = [fecha, loteria, numero]
-    df.to_excel(HISTORIAL_GLOBAL, index=False)
+    df_hist.loc[len(df_hist)] = [loteria, hoy, numero]
+    df_hist.to_excel(ruta_historial, index=False)
 
+# ==========================
+# FUNCIÓN: Estado y días restantes
+# ==========================
 
-def estado_numero(df, numero):
-    """Devuelve FRÍO / ASCENSO / CALIENTE / QUEMADO + días restantes."""
-    now = datetime.now()
-
+def revisar_estado_numero(df, numero):
     df_num = df[df["numero"] == numero]
+    total_salidas = len(df_num)
 
-    conteo = len(df_num)
-
-    # DÍAS RESTANTES
-    if conteo > 0:
-        ultima_fecha = pd.to_datetime(df_num["fecha"].iloc[-1])
-        dias_pasados = (now - ultima_fecha).days
-        dias_restantes = max(0, 7 - dias_pasados)
+    # Estado por cantidad
+    if total_salidas == 0:
+        estado = "Número Frío"
+    elif total_salidas == 1:
+        estado = "Número en ascenso"
+    elif total_salidas == 2:
+        estado = "Número Caliente"
     else:
-        dias_restantes = None
+        estado = "Número Quemado"
 
-    # ESTADO
-    if conteo == 0:
-        return "Número frío", dias_restantes
-    elif conteo == 1:
-        return "Número en ascenso", dias_restantes
-    elif conteo == 2:
-        return "Número caliente", dias_restantes
-    else:
-        return "Número quemado", dias_restantes
+    # --- Cálculo días restantes ---
+    dias_restantes = 0
 
+    if total_salidas > 0:
+        ultima_fecha = df_num["fecha"].max()
+        hoy = datetime.date.today()
+        diferencia = (hoy - ultima_fecha.date()).days
 
-def calcular_arrastre(numero):
-    """Devuelve los arrastres tipo 00 → 25 → 50 → 75."""
+        if diferencia < 7:
+            dias_restantes = 7 - diferencia
+        else:
+            dias_restantes = 0
+
+    return estado, total_salidas, dias_restantes
+
+# ==========================
+# FUNCIÓN: Arrastre
+# ==========================
+
+def calcular_arrastres(numero):
     n = int(numero)
-    arrastres = [
-        f"{(n + 25) % 100:02d}",
-        f"{(n + 50) % 100:02d}",
-        f"{(n + 75) % 100:02d}"
-    ]
-    return arrastres
+    return [(n + 25) % 100, (n + 50) % 100, (n + 75) % 100]
 
+# ==========================
+# FUNCIÓN: Reiniciar mes
+# ==========================
 
 def reiniciar_mes(loteria):
-    """Reinicia SOLO el mes actual pero deja historial global intacto."""
-    ahora = datetime.now()
-    archivo = os.path.join(
-        BASE_DIR, f"{loteria}_{ahora.year}_{ahora.month:02d}.xlsx"
-    )
-    df = pd.DataFrame(columns=["fecha", "numero"])
-    df.to_excel(archivo, index=False)
+    hoy = datetime.date.today()
+    archivo_nuevo = os.path.join(BASE_DIR, f"{loteria}_{hoy.year}_{hoy.month}.xlsx")
+    df_vacio = pd.DataFrame(columns=["fecha", "numero"])
+    df_vacio.to_excel(archivo_nuevo, index=False)
 
-
-# ============================
+# ==========================
 # INTERFAZ STREAMLIT
-# ============================
+# ==========================
 
-st.title("📊 Sistema Web de Quinielas por Lotería")
-st.subheader("Control mensual + historial anual")
+st.title("🎯 Control Inteligente de Quinielas")
+st.write("Sistema profesional para análisis mensual con historial anual incluido.")
 
-# Selección de lotería
-loteria = st.selectbox("Seleccione la lotería:", LOTERIAS)
+# Seleccionar lotería
+loteria = st.selectbox("Seleccione la lotería", LOTERIAS)
 
-df_mes, archivo_mes = cargar_mes_actual(loteria)
+df_mes, ruta_mes = cargar_mes_actual(loteria)
 
-st.write(f"**Archivo del mes:** `{os.path.basename(archivo_mes)}`")
+st.subheader(f"📌 Lotería actual: **{loteria}**")
 
-st.divider()
+# ==========================================
+# PANEL: REGISTRAR QUINIELA
+# ==========================================
 
-# ============================
-# REGISTRO DE QUINIELA
-# ============================
+st.header("📝 Registrar quiniela")
 
-st.header("🟢 Registrar quiniela")
+numero_registro = st.text_input("Ingrese un número (00-99):", max_chars=2)
 
-numero_reg = st.text_input("Ingrese número (00-99):", max_chars=2)
-
-if st.button("Registrar en primera posición"):
-    if numero_reg.isdigit() and len(numero_reg) == 2:
-
-        fecha = datetime.now().strftime("%Y-%m-%d")
-
-        df_mes.loc[len(df_mes)] = [fecha, numero_reg]
-        guardar_mes_actual(df_mes, archivo_mes)
-
-        registrar_historial_global(loteria, numero_reg)
-
-        st.success(f"Registrado {numero_reg} en {loteria}")
-
+if st.button("Registrar"):
+    if numero_registro.isdigit() and 0 <= int(numero_registro) <= 99:
+        registrar_numero(loteria, numero_registro.zfill(2))
+        st.success(f"Número {numero_registro.zfill(2)} registrado correctamente.")
+        st.experimental_rerun()
     else:
-        st.error("Número inválido. Use formato 00-99")
+        st.error("Número inválido.")
 
-
-st.divider()
-
-# ============================
-# REVISAR ESTADO DE QUINIELA
-# ============================
+# ==========================================
+# PANEL: REVISAR ESTADO
+# ==========================================
 
 st.header("🔍 Revisar estado del número")
 
-numero_rev = st.text_input("Número a revisar:", max_chars=2)
+numero_revisar = st.text_input("Número a revisar (00-99):", max_chars=2)
 
 if st.button("Revisar estado"):
-    if numero_rev.isdigit() and len(numero_rev) == 2:
-        estado, dias_rest = estado_numero(df_mes, numero_rev)
+    if numero_revisar.isdigit():
+        numero_revisar = numero_revisar.zfill(2)
+        estado, salidas, dias_restantes = revisar_estado_numero(df_mes, numero_revisar)
 
-        if dias_rest is not None:
-            st.info(f"📌 Estado: **{estado}** (faltan {dias_rest} días)")
-        else:
-            st.info(f"📌 Estado: **{estado}**")
+        mensaje = f"**{estado}** — Salidas este mes: **{salidas}**"
+        if dias_restantes > 0:
+            mensaje += f" — ({dias_restantes} días restantes)"
 
+        st.info(mensaje)
     else:
-        st.error("Número inválido")
+        st.error("Número inválido.")
 
+# ==========================================
+# PANEL: ARRASTRES
+# ==========================================
 
-st.divider()
+st.header("🔄 Arrastre")
 
-# ============================
-# ARRASTRES
-# ============================
+numero_arrastre = st.text_input("Número base (00-99):", key="arrastre")
 
-st.header("🎯 Calcular arrastres")
-
-num_arr = st.text_input("Número para arrastre:", max_chars=2)
-
-if st.button("Mostrar arrastres"):
-    if num_arr.isdigit() and len(num_arr) == 2:
-        arr = calcular_arrastre(num_arr)
-        st.success(f"Arrastres de {num_arr}: {arr[0]}, {arr[1]}, {arr[2]}")
+if st.button("Calcular arrastres"):
+    if numero_arrastre.isdigit():
+        n = numero_arrastre.zfill(2)
+        arr = calcular_arrastres(int(n))
+        arr = [str(x).zfill(2) for x in arr]
+        st.success(f"Arrastres de {n}: {arr}")
     else:
-        st.error("Número inválido")
+        st.error("Número inválido.")
 
+# ==========================================
+# PANEL: MOSTRAR HISTORIAL
+# ==========================================
 
-st.divider()
+st.header("📜 Historial del mes")
 
-# ============================
-# MOSTRAR HISTORIAL
-# ============================
-
-st.header("📜 Historial mensual de esta lotería")
-
-if st.button("Mostrar historial mensual"):
+if st.button("Mostrar historial del mes"):
     st.dataframe(df_mes)
 
+# ==========================================
+# PANEL: REINICIAR MES
+# ==========================================
 
-# ============================
-# REINICIAR MES
-# ============================
+st.header("🧹 Reiniciar mes (manteniendo historial anual)")
 
-st.divider()
-st.header("🧹 Reiniciar mes")
-
-if st.button("Reiniciar mes actual"):
+if st.button("Reiniciar mes"):
     reiniciar_mes(loteria)
-    st.success(f"Mes reiniciado para {loteria}. El historial anual se mantiene.")
+    st.success("Mes reiniciado correctamente.")
+    st.experimental_rerun()
