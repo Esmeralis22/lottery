@@ -1,7 +1,7 @@
 import streamlit as st
 import streamlit.components.v1 as components
 
-st.set_page_config(page_title="Arrastre Interactivo", layout="centered")
+st.set_page_config(page_title="Arrastre by Esteban", layout="centered")
 st.title("🎰 Arrastre by Esteban")
 
 st.write("Escribe un número base del 00 al 99 y observa sus arrastres animados automáticamente.")
@@ -74,6 +74,7 @@ baseInput.addEventListener("input", ()=>{
 """
 
 components.html(html_code, height=400)
+
 
 
 
