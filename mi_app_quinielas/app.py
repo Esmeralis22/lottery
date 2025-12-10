@@ -139,8 +139,19 @@ numero_registro = st.text_input("Ingrese un número (00-99):", max_chars=2, key=
 if st.button("Registrar número"):
     if numero_registro.isdigit() and 0 <= int(numero_registro) <= 99:
         numero_registro = numero_registro.zfill(2)
+        
+        # 1️⃣ registrar número
         registrar_numero(loteria, numero_registro)
-        st.success(f"Número {numero_registro} registrado correctamente.")
+        
+        # 2️⃣ recargar df_mes actualizado
+        df_mes, _ = cargar_mes_actual(loteria)
+
+        # 3️⃣ mostrar mensaje con estado actualizado
+        estado, salidas, dias_restantes = revisar_estado_numero(df_mes, numero_registro)
+        mensaje = f"Número {numero_registro} registrado correctamente.\nEstado: **{estado}** — Salidas este mes: **{salidas}**"
+        if dias_restantes > 0:
+            mensaje += f" — ({dias_restantes} días restantes para poder salir de nuevo)"
+        st.success(mensaje)
     else:
         st.error("Número inválido.")
 
@@ -198,5 +209,7 @@ st.header("🧹 Reiniciar mes (historial anual no se borra)")
 if st.button("Reiniciar mes"):
     reiniciar_mes(loteria)
     st.success("Mes reiniciado correctamente.")
+
+
 
 
